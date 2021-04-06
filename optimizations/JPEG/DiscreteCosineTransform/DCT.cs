@@ -1,25 +1,25 @@
 ﻿using System;
 
-namespace JPEG
+namespace JPEG.DiscreteCosineTransform
 {
     public class DCT
     {
-        private static readonly double AlphaByZero = 1 / Math.Sqrt(2);
-        private static readonly double[] DCTCoefficients = GetCoefficientsForDCTOrIDCT(Size, Size, true);
-        private static readonly double[] IDCTCoefficients = GetCoefficientsForDCTOrIDCT(Size, Size, false);
+        private static readonly float AlphaByZero = Convert.ToSingle(1 / Math.Sqrt(2));
+        private static readonly float[] DCTCoefficients = GetCoefficientsForDCTOrIDCT(Size, Size, true);
+        private static readonly float[] IDCTCoefficients = GetCoefficientsForDCTOrIDCT(Size, Size, false);
 
         public const int Size = 8;
 
-        public static double[,] DCT2D(double[,] input)
+        public static float[,] DCT2D(float[,] input)
         {
-            var matrix = new double[Size, Size];
+            var matrix = new float[Size, Size];
             var beta = 2 * 1f / Size;
             var iteration = 0;
             for (var i = 0; i < Size; i++)
             {
                 for (var j = 0; j < Size; j++)
                 {
-                    var sum = 0d;
+                    var sum = 0f;
                     for (var x = 0; x < Size; x++)
                     for (var y = 0; y < Size; y++)
                         sum += input[x, y] * DCTCoefficients[iteration++];
@@ -30,16 +30,16 @@ namespace JPEG
             return matrix;
         }
 
-        public static double[,] IDCT2D(double[,] frequencyChannel, int shift)
+        public static float[,] IDCT2D(float[,] frequencyChannel, int shift)
         {
             var beta = 2 * 1f / Size;
             var i = 0;
-            var output = new double[Size, Size];
+            var output = new float[Size, Size];
             for (var x = 0; x < Size; x++)
             {
                 for (var y = 0; y < Size; y++)
                 {
-                    var sum = 0d;
+                    var sum = 0f;
                     for (var u = 0; u < Size; u++)
                     {
                         for (var v = 0; v < Size; v++)
@@ -56,9 +56,9 @@ namespace JPEG
             return output;
         }
 
-        private static double[] GetCoefficientsForDCTOrIDCT(int height, int width, bool isDCT)
+        private static float[] GetCoefficientsForDCTOrIDCT(int height, int width, bool isDCT)
         {
-            var output = new double[width * width * height * height];
+            var output = new float[width * width * height * height];
             var i = 0;
             for (var u = 0; u < width; u++)
             {

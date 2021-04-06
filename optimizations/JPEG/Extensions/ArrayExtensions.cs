@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
+using JPEG.HuffmanCoding.CodeTree;
 
-namespace JPEG.Utilities
+namespace JPEG.Extensions
 {
     public static class ArrayExtensions
     {
-        public static (int posFirstMin, int posSecondMin) TwoPosOfMinimums(this List<HuffmanNode> elements)
+        public static (int posFirstMin, int posSecondMin) FindTwoPositionsOfMinimums(this List<HuffmanNode> elements)
         {
             var firstMin = int.MaxValue;
             var secondMin = int.MaxValue;
             var posFirstMin = -1;
             var posSecondMin = -1;
-            for (var i = 0 ; i < elements.Count; i++)
+            for (var i = 0; i < elements.Count; i++)
             {
                 if (elements[i].Frequency < firstMin)
                 {
@@ -18,7 +19,6 @@ namespace JPEG.Utilities
                     firstMin = elements[i].Frequency;
                     posSecondMin = posFirstMin;
                     posFirstMin = i;
-                    
                 }
                 else if (elements[i].Frequency < secondMin)
                 {

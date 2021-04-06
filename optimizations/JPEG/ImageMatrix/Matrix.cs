@@ -2,7 +2,7 @@
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
 
-namespace JPEG.Images
+namespace JPEG.ImageMatrix
 {
     public class Matrix
     {
