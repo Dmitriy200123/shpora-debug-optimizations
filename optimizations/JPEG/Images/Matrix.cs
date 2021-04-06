@@ -1,41 +1,49 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading.Tasks;
 
 namespace JPEG.Images
 {
-    class Matrix
+    public class Matrix
     {
-        public readonly Pixel[,] Pixels;
+        public readonly (byte first, byte second, byte third)[,] ColorChannels;
         public readonly int Height;
         public readonly int Width;
+        public readonly int BmpHeight;
+        public readonly int BmpWidth;
 
-        public Matrix(int height, int width)
+        private const byte ByteMax = byte.MaxValue;
+        private const byte ByteMin = byte.MinValue;
+
+        public Matrix(int bmpHeight, int bmpWidth)
         {
-            Height = height;
-            Width = width;
-            Pixels = new Pixel[height, width];
+            BmpHeight = bmpHeight;
+            BmpWidth = bmpWidth;
+            Height = bmpHeight - bmpHeight % 8;
+            Width = bmpWidth - bmpWidth % 8;
+            ColorChannels = new (byte first, byte second, byte third)[Height, Width];
         }
 
         public static unsafe explicit operator Matrix(Bitmap bmp)
         {
-            var height = bmp.Height - bmp.Height % 8;
-            var width = bmp.Width - bmp.Width % 8;
-            var matrix = new Matrix(height, width);
-            var data = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly,
-                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            for (var j = 0; j < height; j++)
+            var matrix = new Matrix(bmp.Height, bmp.Width);
+            var width = matrix.Width;
+            var height = matrix.Height;
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb);
+            Parallel.For(0, height, j =>
             {
-                var curpos = ((byte*) data.Scan0) + j * data.Stride;
+                var index = (byte*) bmpData.Scan0 + j * bmpData.Stride;
                 for (var i = 0; i < width; i++)
                 {
-                    var b = *(curpos++);
-                    var g = *(curpos++);
-                    var r = *(curpos++);
-                    matrix.Pixels[j, i] = new Pixel(r, g, b, PixelFormat.RGB);
+                    var b = *index++;
+                    var g = *index++;
+                    var r = *index++;
+                    matrix.ColorChannels[j, i] = (r, g, b);
                 }
-            }
+            });
 
-            bmp.UnlockBits(data);
+            bmp.UnlockBits(bmpData);
 
             return matrix;
         }
@@ -43,33 +51,34 @@ namespace JPEG.Images
         public static unsafe explicit operator Bitmap(Matrix matrix)
         {
             var bmp = new Bitmap(matrix.Width, matrix.Height);
-            var data = bmp.LockBits(new Rectangle(0, 0, matrix.Width, matrix.Height), ImageLockMode.WriteOnly,
-                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            for (var j = 0; j < bmp.Height; j++)
+            var width = matrix.Width;
+            var height = matrix.Height;
+            var bmpWidth = matrix.BmpWidth;
+            var bmpHeight = matrix.BmpHeight;
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+                PixelFormat.Format24bppRgb);
+            Parallel.For(0, bmpHeight, j =>
             {
-                var curpos = ((byte*) data.Scan0) + j * data.Stride;
-                for (var i = 0; i < bmp.Width; i++)
+                var index = (byte*) bmpData.Scan0 + j * bmpData.Stride;
+                for (var i = 0; i < bmpWidth; i++)
                 {
-                    var pixel = matrix.Pixels[j, i];
-                    var color = Color.FromArgb(ToByte(pixel.R), ToByte(pixel.G), ToByte(pixel.B));
-                    *(curpos++) = color.B;
-                    *(curpos++) = color.G;
-                    *(curpos++) = color.R;
+                    var (first, second, third) = matrix.ColorChannels[j, i];
+                    var r = (int) first;
+                    var g = (int) second;
+                    var b = (int) third;
+                    var color = Color.FromArgb(
+                        r > ByteMax ? ByteMax : r < ByteMin ? ByteMin : r,
+                        g > ByteMax ? ByteMax : g < ByteMin ? ByteMin : g,
+                        b > ByteMax ? ByteMax : b < ByteMin ? ByteMin : b
+                    );
+                    *index++ = color.B;
+                    *index++ = color.G;
+                    *index++ = color.R;
                 }
-            }
+            });
 
-            bmp.UnlockBits(data);
+            bmp.UnlockBits(bmpData);
             return bmp;
-        }
-
-        public static int ToByte(double d)
-        {
-            var val = (int) d;
-            if (val > byte.MaxValue)
-                return byte.MaxValue;
-            if (val < byte.MinValue)
-                return byte.MinValue;
-            return val;
         }
     }
 }
