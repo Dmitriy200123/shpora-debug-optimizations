@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace JPEG.Images
 {
@@ -7,49 +8,57 @@ namespace JPEG.Images
         public readonly Pixel[,] Pixels;
         public readonly int Height;
         public readonly int Width;
-				
+
         public Matrix(int height, int width)
         {
             Height = height;
             Width = width;
-			
-            Pixels = new Pixel[height,width];
-            for(var i = 0; i< height; ++i)
-            for(var j = 0; j< width; ++j)
-                Pixels[i, j] = new Pixel(0, 0, 0, PixelFormat.RGB);
+            Pixels = new Pixel[height, width];
         }
 
-        public static explicit operator Matrix(Bitmap bmp)
+        public static unsafe explicit operator Matrix(Bitmap bmp)
         {
             var height = bmp.Height - bmp.Height % 8;
             var width = bmp.Width - bmp.Width % 8;
             var matrix = new Matrix(height, width);
-
-            for(var j = 0; j < height; j++)
+            var data = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly,
+                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            for (var j = 0; j < height; j++)
             {
-                for(var i = 0; i < width; i++)
+                var curpos = ((byte*) data.Scan0) + j * data.Stride;
+                for (var i = 0; i < width; i++)
                 {
-                    var pixel = bmp.GetPixel(i, j);
-                    matrix.Pixels[j, i] = new Pixel(pixel.R, pixel.G, pixel.B, PixelFormat.RGB);
+                    var b = *(curpos++);
+                    var g = *(curpos++);
+                    var r = *(curpos++);
+                    matrix.Pixels[j, i] = new Pixel(r, g, b, PixelFormat.RGB);
                 }
             }
+
+            bmp.UnlockBits(data);
 
             return matrix;
         }
 
-        public static explicit operator Bitmap(Matrix matrix)
+        public static unsafe explicit operator Bitmap(Matrix matrix)
         {
             var bmp = new Bitmap(matrix.Width, matrix.Height);
-
-            for(var j = 0; j < bmp.Height; j++)
+            var data = bmp.LockBits(new Rectangle(0, 0, matrix.Width, matrix.Height), ImageLockMode.WriteOnly,
+                System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            for (var j = 0; j < bmp.Height; j++)
             {
-                for(var i = 0; i < bmp.Width; i++)
+                var curpos = ((byte*) data.Scan0) + j * data.Stride;
+                for (var i = 0; i < bmp.Width; i++)
                 {
                     var pixel = matrix.Pixels[j, i];
-                    bmp.SetPixel(i, j, Color.FromArgb(ToByte(pixel.R), ToByte(pixel.G), ToByte(pixel.B)));
+                    var color = Color.FromArgb(ToByte(pixel.R), ToByte(pixel.G), ToByte(pixel.B));
+                    *(curpos++) = color.B;
+                    *(curpos++) = color.G;
+                    *(curpos++) = color.R;
                 }
             }
 
+            bmp.UnlockBits(data);
             return bmp;
         }
 

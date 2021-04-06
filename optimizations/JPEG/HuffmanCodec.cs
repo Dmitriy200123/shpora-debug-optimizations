@@ -6,7 +6,7 @@ using JPEG.Utilities;
 
 namespace JPEG
 {
-	class HuffmanNode
+	public class HuffmanNode
 	{
 		public byte? LeafLabel { get; set; }
 		public int Frequency { get; set; }
@@ -31,8 +31,6 @@ namespace JPEG
 
 			public int GetHashCode(BitsWithLength obj)
 			{
-				if(obj == null)
-					return 0;
 				return ((397 *obj.Bits) << 5) ^ (17* obj.BitsCount);
 			}
 		}
@@ -48,13 +46,13 @@ namespace JPEG
 			var bitsCount = bitsWithLength.BitsCount;
 			var bits = bitsWithLength.Bits;
 
-			int neededBits = 8 - unfinishedBits.BitsCount;
+			var neededBits = 8 - unfinishedBits.BitsCount;
 			while(bitsCount >= neededBits)
 			{
 				bitsCount -= neededBits;
 				buffer.Add((byte) ((unfinishedBits.Bits << neededBits) + (bits >> bitsCount)));
 
-				bits = bits & ((1 << bitsCount) - 1);
+				bits &= (1 << bitsCount) - 1;
 
 				unfinishedBits.Bits = 0;
 				unfinishedBits.BitsCount = 0;
@@ -78,9 +76,13 @@ namespace JPEG
 
 	class HuffmanCodec
 	{
-		public static byte[] Encode(IEnumerable<byte> data, out Dictionary<BitsWithLength, byte> decodeTable, out long bitsCount)
+		private static readonly IEnumerable<int> _enumerable = Enumerable.Range(0, byte.MaxValue + 1);
+
+		public static byte[] Encode(List<byte> data, out Dictionary<BitsWithLength, byte> decodeTable, out long bitsCount)
 		{
-			var frequences = CalcFrequences(data);
+			var currentData = data;
+			//refactor
+			var frequences = CalcFrequences(currentData);
 
 			var root = BuildHuffmanTree(frequences);
 
@@ -88,7 +90,8 @@ namespace JPEG
 			FillEncodeTable(root, encodeTable);
 
 			var bitsBuffer = new BitsBuffer();
-			foreach(var b in data)
+			//refactor
+			foreach(var b in currentData)
 				bitsBuffer.Add(encodeTable[b]);
 
 			decodeTable = CreateDecodeTable(encodeTable);
@@ -154,26 +157,29 @@ namespace JPEG
 		{
 			var nodes = GetNodes(frequences);
 			
-			while(nodes.Count() > 1)
+			//refactor
+			while(nodes.Count > 1)
 			{
-				var firstMin = nodes.MinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(firstMin);
-				var secondMin = nodes.MinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(secondMin);
-				nodes = nodes.Concat(new HuffmanNode {Frequency = firstMin.Frequency + secondMin.Frequency, Left = secondMin, Right = firstMin }.ToEnumerable());
+				var (posFirstMin, posSecondMin) =
+					nodes.TwoPosOfMinimums();
+				var firstMin = nodes[posFirstMin];
+				var secondMin = nodes[posSecondMin];
+				nodes.RemoveAt(posFirstMin);
+				nodes.RemoveAt(posFirstMin < posSecondMin ? posSecondMin-1 : posSecondMin);
+				nodes.Add(new HuffmanNode {Frequency = firstMin.Frequency + secondMin.Frequency, Left = secondMin, Right = firstMin});
 			}
 			return nodes.First();
 		}
 
-		private static IEnumerable<HuffmanNode> GetNodes(int[] frequences)
+		private static List<HuffmanNode> GetNodes(int[] frequences)
 		{
-			return Enumerable.Range(0, byte.MaxValue + 1)
+			return _enumerable
 				.Select(num => new HuffmanNode {Frequency = frequences[num], LeafLabel = (byte) num})
 				.Where(node => node.Frequency > 0)
-				.ToArray();
+				.ToList();
 		}
 
-		private static int[] CalcFrequences(IEnumerable<byte> data)
+		private static int[] CalcFrequences(List<byte> data)
 		{
 			var result = new int[byte.MaxValue + 1];
 			Parallel.ForEach(data, b => Interlocked.Increment(ref result[b]));
