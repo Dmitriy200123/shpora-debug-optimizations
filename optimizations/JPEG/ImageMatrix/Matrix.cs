@@ -63,14 +63,7 @@ namespace JPEG.ImageMatrix
                 for (var i = 0; i < bmpWidth; i++)
                 {
                     var (first, second, third) = matrix.ColorChannels[j, i];
-                    var r = (int) first;
-                    var g = (int) second;
-                    var b = (int) third;
-                    var color = Color.FromArgb(
-                        r > ByteMax ? ByteMax : r < ByteMin ? ByteMin : r,
-                        g > ByteMax ? ByteMax : g < ByteMin ? ByteMin : g,
-                        b > ByteMax ? ByteMax : b < ByteMin ? ByteMin : b
-                    );
+                    var color = Color.FromArgb(first, second, third);
                     *index++ = color.B;
                     *index++ = color.G;
                     *index++ = color.R;
