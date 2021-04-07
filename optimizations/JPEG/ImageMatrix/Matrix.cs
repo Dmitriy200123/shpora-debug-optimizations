@@ -12,9 +12,6 @@ namespace JPEG.ImageMatrix
         public readonly int BmpHeight;
         public readonly int BmpWidth;
 
-        private const byte ByteMax = byte.MaxValue;
-        private const byte ByteMin = byte.MinValue;
-
         public Matrix(int bmpHeight, int bmpWidth)
         {
             BmpHeight = bmpHeight;
