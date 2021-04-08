@@ -25,7 +25,7 @@ namespace JPEG.HuffmanCoding.CodeTree
             return nodes.First();
         }
 
-        private static List<HuffmanNode> GetNodes(int[] frequencies)
+        public static List<HuffmanNode> GetNodes(int[] frequencies)
         {
             return ByteEnumerable
                 .Select(num => new HuffmanNode {Frequency = frequencies[num], LeafLabel = (byte) num})
