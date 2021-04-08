@@ -15,8 +15,9 @@ namespace JPEG.ColorSubsampling
             for (var j = 0; j < height; j += offset)
             for (var i = 0; i < width; i += offset)
             {
-                var (first, second, third) = matrix.ColorChannels[yOffset + j, xOffset + i];
-                result[j, i] = (channelNumber == 0 ? first : channelNumber == 1 ? second : third) + shift;
+                result[j, i] = (channelNumber == 0 ? matrix.ColorChannels[yOffset + j, xOffset + i].first :
+                    channelNumber == 1 ? matrix.ColorChannels[yOffset + j, xOffset + i].second :
+                    matrix.ColorChannels[yOffset + j, xOffset + i].third) + shift;
                 if (isBrightness) continue;
                 result[j + 1, i] = result[j, i];
                 result[j, i + 1] = result[j, i];
