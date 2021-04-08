@@ -28,7 +28,7 @@ namespace JPEG
 
                     sw.Stop();
                     Console.WriteLine(
-                        $"{imageMatrix.BmpWidth}x{imageMatrix.BmpHeight} - {fileStream.Length / (1024.0 * 1024):F2} MB");
+                        $"{imageMatrix.Width}x{imageMatrix.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB");
                     sw.Start();
 
                     var compressionResult = Compressor.Compress(imageMatrix);
