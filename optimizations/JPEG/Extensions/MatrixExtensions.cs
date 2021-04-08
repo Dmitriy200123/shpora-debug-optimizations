@@ -19,11 +19,12 @@ namespace JPEG.Extensions
                 var second = b[y, x];
                 var third = c[y, x];
 
-                matrix.ColorChannels[yOffset + y, xOffset + x] = (
-                    first > ByteMax ? ByteMax : first < ByteMin ? ByteMin : (byte) first,
-                    second > ByteMax ? ByteMax : second < ByteMin ? ByteMin : (byte) second,
-                    third > ByteMax ? ByteMax : third < ByteMin ? ByteMin : (byte) third
-                );
+                matrix.FirstColorChannel[yOffset + y, xOffset + x] =
+                    first > ByteMax ? ByteMax : first < ByteMin ? ByteMin : (byte) first;
+                matrix.SecondColorChannel[yOffset + y, xOffset + x] =
+                    second > ByteMax ? ByteMax : second < ByteMin ? ByteMin : (byte) second;
+                matrix.ThirdColorChannel[yOffset + y, xOffset + x] =
+                    third > ByteMax ? ByteMax : third < ByteMin ? ByteMin : (byte) third;
             }
         }
     }

@@ -6,9 +6,11 @@ namespace JPEG.ImageMatrix
 {
     public class Matrix
     {
-        public readonly (byte first, byte second, byte third)[,] ColorChannels;
-        public int Height { get; private set; }
-        public int Width{  get; private set; }
+        public readonly byte [,] FirstColorChannel;
+        public readonly byte [,] SecondColorChannel;
+        public readonly byte [,] ThirdColorChannel;
+        public int Height { get; }
+        public int Width{  get; }
 
         public Matrix(int bmpHeight, int bmpWidth)
         {
@@ -16,7 +18,9 @@ namespace JPEG.ImageMatrix
             var remainsWidth = bmpWidth % 8;
             Height = remainsHeight != 0 ? bmpHeight + 8 - remainsHeight : bmpHeight;
             Width = remainsWidth != 0 ? bmpWidth + 8 - remainsWidth : bmpWidth;
-            ColorChannels = new (byte first, byte second, byte third)[Height, Width];
+            FirstColorChannel = new byte[Height, Width];
+            SecondColorChannel = new byte[Height, Width];
+            ThirdColorChannel = new byte[Height, Width];
         }
 
         public static unsafe explicit operator Matrix(Bitmap bmp)
@@ -34,7 +38,9 @@ namespace JPEG.ImageMatrix
                     var b = *index++;
                     var g = *index++;
                     var r = *index++;
-                    matrix.ColorChannels[j, i] = (r, g, b);
+                    matrix.FirstColorChannel[j, i] = r;
+                    matrix.SecondColorChannel[j, i] = g;
+                    matrix.ThirdColorChannel[j, i] = b;
                 }
             });
 
@@ -54,7 +60,9 @@ namespace JPEG.ImageMatrix
                 var index = (byte*) bmpData.Scan0 + j * bmpData.Stride;
                 for (var i = 0; i < width; i++)
                 {
-                    var (first, second, third) = matrix.ColorChannels[j, i];
+                    var first = matrix.FirstColorChannel[j, i];
+                    var second = matrix.SecondColorChannel[j, i];
+                    var third = matrix.ThirdColorChannel[j, i];
                     var color = Color.FromArgb(first, second, third);
                     *index++ = color.B;
                     *index++ = color.G;
